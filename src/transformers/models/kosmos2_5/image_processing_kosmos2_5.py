@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Image processor class for Kosmos2_5."""
+"""Image processor class for Varlen model."""
 
 import math
 from typing import Dict, Optional, Union
@@ -74,20 +74,19 @@ def torch_extract_patches(image_tensor, patch_height, patch_width):
 
 class Kosmos2_5ImageProcessor(BaseImageProcessor):
     r"""
-    Constructs a Kosmos2_5 image processor.
+    Constructs a variable length image processor.
 
     Args:
         do_convert_rgb (`bool`, *optional*, defaults to `True`):
             Whether to convert the image to RGB.
         do_normalize (`bool`, *optional*, defaults to `True`):
             Whether to normalize the image. Can be overridden by the `do_normalize` parameter in the `preprocess`
-            method. According to Kosmos2_5 paper and code, the image is normalized with its own mean and standard
+            method. The image is normalized with its own mean and standard
             deviation.
         patch_size (`Dict[str, int]`, *optional*, defaults to `{"height": 16, "width": 16}`):
-            The patch size to use for the image. According to Kosmos2_5 paper and code, the patch size is 16x16.
+            The patch size to use for the image. The patch size is 16x16.
         max_patches (`int`, *optional*, defaults to 4096):
-            The maximum number of patches to extract from the image as per the [Kosmos2_5
-            paper](https://arxiv.org/pdf/2309.11419).
+            The maximum number of patches to extract from the image.
     """
 
     model_input_names = ["flattened_patches"]
@@ -108,9 +107,9 @@ class Kosmos2_5ImageProcessor(BaseImageProcessor):
 
     def extract_flattened_patches(
         self,
-        image: np.ndarray,
-        max_patches: int,
-        patch_size: dict,
+        image: np.ndarray = None,
+        max_patches: int = None,
+        patch_size: dict = {"height": 16, "width": 16},
         input_data_format: Optional[Union[str, ChannelDimension]] = None,
         **kwargs,
     ) -> np.ndarray:
@@ -131,12 +130,19 @@ class Kosmos2_5ImageProcessor(BaseImageProcessor):
         """
         requires_backends(self.extract_flattened_patches, "torch")
 
+        # if max_patches is not set, set it to the default value
+        max_patches = max_patches if max_patches is not None else self.max_patches
+
         # convert to torch
         image = to_channel_dimension_format(image, ChannelDimension.FIRST, input_data_format)
         image = torch.from_numpy(image)
 
         patch_height, patch_width = patch_size["height"], patch_size["width"]
         image_height, image_width = get_image_size(image, ChannelDimension.FIRST)
+
+        # calculate the number to patches now
+        num_patches = math.ceil(image_height / patch_height) * math.ceil(image_width / patch_width)
+        max_patches = min(max_patches, num_patches)
 
         # maximize scale s.t.
         scale = math.sqrt(max_patches * (patch_height / image_height) * (patch_width / image_width))
