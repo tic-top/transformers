@@ -1605,8 +1605,8 @@ class ChameleonForConditionalGeneration(ChameleonPreTrainedModel, GenerationMixi
         logits = self.lm_head(hidden_states)
 
         # Disallow image tokens which does not include special begin-image and end-image tokens
-        image_tokens = self.model.vocabulary_mapping.image_tokens
-        logits[:, :, image_tokens] = torch.finfo(logits.dtype).min
+        # image_tokens = self.model.vocabulary_mapping.image_tokens
+        # logits[:, :, image_tokens] = torch.finfo(logits.dtype).min
 
         loss = None
         if labels is not None:
