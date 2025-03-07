@@ -26,6 +26,7 @@ from torch.nn import CrossEntropyLoss
 
 from ...activations import ACT2FN
 from ...cache_utils import Cache, StaticCache
+from ...generation import GenerationMixin
 from ...generation.configuration_utils import GenerationConfig
 from ...generation.logits_process import (
     AllowOnlyTokensAtRelativeOffsetLogitsProcessor,
