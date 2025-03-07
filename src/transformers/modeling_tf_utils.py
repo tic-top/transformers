@@ -795,7 +795,7 @@ def load_tf_shard(model, model_layer_map, resolved_archive_file, ignore_mismatch
         ignore_mismatched_sizes (`bool`, *optional*, defaults to `False`): Whether to ignore the mismatched keys
 
     Returns:
-        `keras.models.Model`: Three lists, one for the layers that were found and succesfully restored (from the
+        `keras.models.Model`: Three lists, one for the layers that were found and successfully restored (from the
         shard file), one for the mismatched layers, and another one for the unexpected layers.
     """
     saved_weight_names_set = set()
@@ -868,7 +868,7 @@ def load_tf_shard(model, model_layer_map, resolved_archive_file, ignore_mismatch
                 f"Unable to load weights from TF checkpoint file for '{resolved_archive_file}' "
                 f"at '{resolved_archive_file}'. "
                 "If you tried to load a TF model from a sharded checkpoint, you should try converting the model "
-                "by loading it in pytorch and saving it localy. A convertion script should be realeased soon."
+                "by loading it in pytorch and saving it locally. A convertion script should be released soon."
             )
 
 
@@ -1391,7 +1391,7 @@ class TFPreTrainedModel(keras.Model, TFModelUtilsMixin, TFGenerationMixin, PushT
             `bool`: Whether this model can generate sequences with `.generate()`.
         """
         # Detects whether `prepare_inputs_for_generation` has been overwritten, which is a requirement for generation.
-        # Alternativelly, the model can also have a custom `generate` function.
+        # Alternatively, the model can also have a custom `generate` function.
         if "GenerationMixin" in str(cls.prepare_inputs_for_generation) and "GenerationMixin" in str(cls.generate):
             return False
         return True
@@ -1444,7 +1444,7 @@ class TFPreTrainedModel(keras.Model, TFModelUtilsMixin, TFGenerationMixin, PushT
         Args:
             dataset (`Any`):
                 A [~`datasets.Dataset`] to be wrapped as a `tf.data.Dataset`.
-            batch_size (`int`, defaults to 8):
+            batch_size (`int`, *optional*, defaults to 8):
                 The size of batches to return.
             shuffle (`bool`, defaults to `True`):
                 Whether to return samples from the dataset in random order. Usually `True` for training datasets and
@@ -2627,7 +2627,7 @@ class TFPreTrainedModel(keras.Model, TFModelUtilsMixin, TFGenerationMixin, PushT
 
                 <Tip>
 
-                To test a pull request you made on the Hub, you can pass `revision="refs/pr/<pr_number>".
+                To test a pull request you made on the Hub, you can pass `revision="refs/pr/<pr_number>"`.
 
                 </Tip>
 
@@ -3160,7 +3160,7 @@ class TFPreTrainedModel(keras.Model, TFModelUtilsMixin, TFGenerationMixin, PushT
             commit_message (`str`, *optional*):
                 Message to commit while pushing. Will default to `"Upload model"`.
             private (`bool`, *optional*):
-                Whether or not the repository created should be private.
+                Whether to make the repo private. If `None` (default), the repo will be public unless the organization's default is private. This value is ignored if the repo already exists.
             token (`bool` or `str`, *optional*):
                 The token to use as HTTP bearer authorization for remote files. If `True`, will use the token generated
                 when running `huggingface-cli login` (stored in `~/.huggingface`). Will default to `True` if `repo_url`
@@ -3442,7 +3442,7 @@ class TFSequenceSummary(keras.layers.Layer):
             - **summary_first_dropout** (`float`) -- Optional dropout probability before the projection and activation.
             - **summary_last_dropout** (`float`)-- Optional dropout probability after the projection and activation.
 
-        initializer_range (`float`, defaults to 0.02): The standard deviation to use to initialize the weights.
+        initializer_range (`float`, *optional*, defaults to 0.02): The standard deviation to use to initialize the weights.
         kwargs (`Dict[str, Any]`, *optional*):
             Additional keyword arguments passed along to the `__init__` of `keras.layers.Layer`.
     """

@@ -16,10 +16,16 @@ rendered properly in your Markdown viewer.
 
 # Chameleon
 
+<div class="flex flex-wrap space-x-1">
+<img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-DE3412?style=flat&logo=pytorch&logoColor=white">
+<img alt="FlashAttention" src="https://img.shields.io/badge/%E2%9A%A1%EF%B8%8E%20FlashAttention-eae0c8?style=flat">
+<img alt="SDPA" src="https://img.shields.io/badge/SDPA-DE3412?style=flat&logo=pytorch&logoColor=white">
+</div>
+
 ## Overview
 
 The Chameleon model was proposed in [Chameleon: Mixed-Modal Early-Fusion Foundation Models
-](https://arxiv.org/abs/2405.09818v1) by META AI Chameleon Team. Chameleon is a Vision-Language Model that use vector quantization to tokenize images which enables the model to generate multimodal output. The model takes images and texts as input, including an interleaved format, and generates textual response. Image generation module is not released yet. 
+](https://arxiv.org/abs/2405.09818v1) by META AI Chameleon Team. Chameleon is a Vision-Language Model that use vector quantization to tokenize images which enables the model to generate multimodal output. The model takes images and texts as input, including an interleaved format, and generates textual response. Image generation module is not released yet.
 
 
 The abstract from the paper is the following:
@@ -66,7 +72,7 @@ The original code can be found [here](https://github.com/facebookresearch/chamel
 
 ### Single image inference
 
-Chameleon is a gated model so make sure to have access and login to Hugging Face Hub using a token. 
+Chameleon is a gated model so make sure to have access and login to Hugging Face Hub using a token.
 Here's how to load the model and perform inference in half-precision (`torch.bfloat16`):
 
 ```python
@@ -83,7 +89,7 @@ url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
 image = Image.open(requests.get(url, stream=True).raw)
 prompt = "What do you see in this image?<image>"
 
-inputs = processor(prompt, image, return_tensors="pt").to(model.device)
+inputs = processor(images=image, text=prompt, return_tensors="pt").to(model.device, dtype=torch.bfloat16)
 
 # autoregressively complete prompt
 output = model.generate(**inputs, max_new_tokens=50)
@@ -274,7 +280,17 @@ From here, you can split the response tokens into text and image token segments,
 
 ### Quantization using Bitsandbytes
 
-The model can be loaded in 8 or 4 bits, greatly reducing the memory requirements while maintaining the performance of the original model. First make sure to install bitsandbytes, `pip install bitsandbytes` and make sure to have access to a CUDA compatible GPU device. Simply change the snippet above with:
+The model can be loaded in 8 or 4 bits, greatly reducing the memory requirements while maintaining the performance of the original model. First make sure to install bitsandbytes, `pip install bitsandbytes` and to have access to a GPU/accelerator that is supported by the library.
+
+<Tip>
+
+bitsandbytes is being refactored to support multiple backends beyond CUDA. Currently, ROCm (AMD GPU) and Intel CPU implementations are mature, with Intel XPU in progress and Apple Silicon support expected by Q4/Q1. For installation instructions and the latest backend updates, visit [this link](https://huggingface.co/docs/bitsandbytes/main/en/installation#multi-backend).
+
+We value your feedback to help identify bugs before the full release! Check out [these docs](https://huggingface.co/docs/bitsandbytes/main/en/non_cuda_backends) for more details and feedback links.
+
+</Tip>
+
+Simply change the snippet above with:
 
 ```python
 from transformers import ChameleonForConditionalGeneration, BitsAndBytesConfig
@@ -283,7 +299,7 @@ from transformers import ChameleonForConditionalGeneration, BitsAndBytesConfig
 quantization_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_compute_dtype=torch.bfloat16,
 )
 
 model = ChameleonForConditionalGeneration.from_pretrained("facebook/chameleon-7b", quantization_config=quantization_config, device_map="cuda")
@@ -298,8 +314,8 @@ from transformers import ChameleonForConditionalGeneration
 
 model_id = "facebook/chameleon-7b"
 model = ChameleonForConditionalGeneration.from_pretrained(
-    model_id, 
-    torch_dtype=torch.bfloat16, 
+    model_id,
+    torch_dtype=torch.bfloat16,
     low_cpu_mem_usage=True,
     attn_implementation="flash_attention_2"
 ).to(0)

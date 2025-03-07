@@ -52,13 +52,17 @@ class ChameleonProcessor(ProcessorMixin):
 
     attributes = ["image_processor", "tokenizer"]
     tokenizer_class = ("LlamaTokenizer", "LlamaTokenizerFast")
+    valid_kwargs = ["image_seq_length", "image_token"]
     image_processor_class = "ChameleonImageProcessor"
 
     def __init__(self, image_processor, tokenizer, image_seq_length: int = 1024, image_token: str = "<image>"):
         self.image_seq_length = image_seq_length
-        self.image_token = image_token
-        self.image_start_token = "<racm3:break>"  # fixed tokens for start and end, so can hardcode
-        self.image_end_token = "<eoss>"
+        self.image_token = tokenizer.image_token if hasattr(tokenizer, "image_token") else image_token
+        self.image_start_token = (
+            tokenizer.boi_token if hasattr(tokenizer, "boi_token") else "<racm3:break>"
+        )  # fixed tokens for start and end, so can hardcode
+        self.image_end_token = tokenizer.eoi_token if hasattr(tokenizer, "eoi_token") else "<eoss>"
+
         super().__init__(image_processor, tokenizer)
 
     def __call__(
@@ -79,26 +83,13 @@ class ChameleonProcessor(ProcessorMixin):
         of the above two methods for more information.
 
         Args:
+            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `List[PIL.Image.Image]`, `List[np.ndarray]`, `List[torch.Tensor]`):
+                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
+                tensor. Both channels-first and channels-last formats are supported.
             text (`str`, `List[str]`, `List[List[str]]`):
                 The sequence or batch of sequences to be encoded. Each sequence can be a string or a list of strings
                 (pretokenized string). If the sequences are provided as list of strings (pretokenized), you must set
                 `is_split_into_words=True` (to lift the ambiguity with a batch of sequences).
-            images (`PIL.Image.Image`, `np.ndarray`, `torch.Tensor`, `List[PIL.Image.Image]`, `List[np.ndarray]`, `List[torch.Tensor]`):
-                The image or batch of images to be prepared. Each image can be a PIL image, NumPy array or PyTorch
-                tensor. Both channels-first and channels-last formats are supported.
-            padding (`bool`, `str` or [`~utils.PaddingStrategy`], *optional*, defaults to `False`):
-                Select a strategy to pad the returned sequences (according to the model's padding side and padding
-                index) among:
-                - `True` or `'longest'`: Pad to the longest sequence in the batch (or no padding if only a single
-                  sequence if provided).
-                - `'max_length'`: Pad to a maximum length specified with the argument `max_length` or to the maximum
-                  acceptable input length for the model if that argument is not provided.
-                - `False` or `'do_not_pad'` (default): No padding (i.e., can output a batch with sequences of different
-                  lengths).
-            max_length (`int`, *optional*):
-                Maximum length of the returned list and optionally padding length (see above).
-            truncation (`bool`, *optional*):
-                Activates truncation to cut input sequences longer than `max_length` to `max_length`.
             return_tensors (`str` or [`~utils.TensorType`], *optional*):
                 If set, will return tensors of a particular framework. Acceptable values are:
 
@@ -116,7 +107,7 @@ class ChameleonProcessor(ProcessorMixin):
               `None`).
             - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
         """
-        if isinstance(text, str):
+         if isinstance(text, str):
             text = [text]
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise TypeError("Invalid input text. Please provide a string, or a list of strings")
@@ -179,3 +170,6 @@ class ChameleonProcessor(ProcessorMixin):
             List[PIL.Image.Image]: A list of PIL images.
         """
         return self.image_processor.postprocess(pixel_values)
+
+
+__all__ = ["ChameleonProcessor"]
