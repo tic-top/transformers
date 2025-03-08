@@ -25,7 +25,7 @@ from torch import nn
 from torch.nn import CrossEntropyLoss
 
 from ...activations import ACT2FN
-from ...cache_utils import Cache, StaticCache
+from ...cache_utils import Cache, DynamicCache, StaticCache
 from ...generation import GenerationMixin
 from ...generation.configuration_utils import GenerationConfig
 from ...generation.logits_process import (
@@ -1117,7 +1117,12 @@ CHAMELEON_VQ_START_DOCSTRING = r"""
 )
 class ChameleonVQVAE(PreTrainedModel):
     config_class = ChameleonVQVAEConfig
-    _no_split_modules = ["ChameleonVQVAEVectorQuantizer"]
+    _supports_flash_attn_2 = True
+    _no_split_modules = [
+        "ChameleonVQVAEVectorQuantizer",
+        "ChameleonVQVAEResnetBlock",
+        "ChameleonVQVAEAttnBlock",
+    ]
 
     def _init_weights(self, module):
         std = self.config.initializer_range
@@ -1140,6 +1145,7 @@ class ChameleonVQVAE(PreTrainedModel):
         self.quant_conv = torch.nn.Conv2d(config.latent_channels, config.embed_dim, 1)
         self.post_quant_conv = torch.nn.Conv2d(config.embed_dim, config.latent_channels, 1)
         self.eval()  # Chameleon's VQ model is frozen
+        self.post_init()
 
     def encode(self, pixel_values: torch.FloatTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.LongTensor]:
         """
@@ -1258,7 +1264,7 @@ class ChameleonPreTrainedModel(PreTrainedModel):
     config_class = ChameleonConfig
     base_model_prefix = "model"
     supports_gradient_checkpointing = True
-    _no_split_modules = ["ChameleonDecoderLayer", "ChameleonSwinDecoderLayer"]
+    _no_split_modules = ["ChameleonDecoderLayer"]
     _skip_keys_device_placement = ["past_key_values", "causal_mask"]
     _supports_flash_attn_2 = True
     _supports_sdpa = True
@@ -1355,7 +1361,7 @@ CHAMELEON_INPUTS_DOCSTRING = r"""
     "The bare chameleon Model outputting raw hidden-states without any specific head on top.",
     CHAMELEON_START_DOCSTRING,
 )
-class ChameleonModel(ChameleonPreTrainedModel):
+class ChameleonModel(ChameleonPreTrainedModel, GenerationMixin):
     """
     Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`ChameleonDecoderLayer`]
 
@@ -1390,7 +1396,7 @@ class ChameleonModel(ChameleonPreTrainedModel):
             [decoder_layer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
         )
         self.norm = ChameleonRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.vqmodel = ChameleonVQVAE._from_config(config.vq_config)
+        self.vqmodel = ChameleonVQVAE(config.vq_config)
         self.gradient_checkpointing = False
 
         # Initialize weights and apply final processing
