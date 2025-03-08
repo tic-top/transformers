@@ -1491,7 +1491,7 @@ class ChameleonModel(ChameleonPreTrainedModel, GenerationMixin):
         if pixel_values is not None:
             image_tokens = self.get_image_tokens(pixel_values)
             special_image_mask = input_ids == self.vocabulary_mapping.image_token_id
-            if not is_torchdynamo_compiling() and inputs_embeds[special_image_mask].numel() != image_tokens.numel():
+            if not is_torchdynamo_compiling() and special_image_mask.sum() != image_tokens.numel():
                 n_image_tokens_in_text = (input_ids == self.vocabulary_mapping.image_token_id).sum()
                 n_image_features = image_tokens.shape[0] * image_tokens.shape[1]
                 raise ValueError(
@@ -1769,7 +1769,7 @@ class ChameleonForConditionalGeneration(ChameleonPreTrainedModel, GenerationMixi
         logits_processor: Optional[LogitsProcessorList] = None,
         multimodal_generation_mode: Optional[
             Literal["text-only", "image-only", "interleaved-text-image", "unrestricted"]
-        ] = None,
+        ] = "interleaved-text-image",
         **kwargs,
     ) -> Union[GenerateOutput, torch.LongTensor]:
         generation_config, model_kwargs = self._prepare_generation_config(
