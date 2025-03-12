@@ -69,7 +69,6 @@ class ChameleonProcessor(ProcessorMixin):
         truncation: Union[bool, str, TruncationStrategy] = None,
         max_length: int = None,
         return_tensors: Optional[Union[str, TensorType]] = TensorType.PYTORCH,
-        return_for_text_completion: bool = False,
     ) -> BatchFeature:
         """
         Main method to prepare for the model one or several sequences(s) and image(s). This method forwards the `text`
@@ -126,8 +125,6 @@ class ChameleonProcessor(ProcessorMixin):
         one_img_tokens = self.image_start_token + (self.image_token * self.image_seq_length) + self.image_end_token
         for sample in text:
             sample = sample.replace(self.image_token, one_img_tokens)
-            if not return_for_text_completion:
-                sample += self.tokenizer.sep_token  # special Chameleon treatment to add sep for chat mode
             prompt_strings.append(sample)
 
         data = self.tokenizer(
